@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 
 class Module:
@@ -30,26 +30,39 @@ class Module:
         return list(m.values())
 
     def train(self) -> None:
-        """Set the mode of this module and all descendent modules to `train`."""
-        raise NotImplementedError("Need to include this file from past assignment.")
+        """Set the `training` flag of this and descendent to true."""
+        self.training = True
+        for mod in self._modules.values():
+            mod.train()
 
     def eval(self) -> None:
-        """Set the mode of this module and all descendent modules to `eval`."""
-        raise NotImplementedError("Need to include this file from past assignment.")
+        """Set the `training` flag of this and descendent to false."""
+        self.training = False
+        for mod in self._modules.values():
+            mod.eval()
 
-    def named_parameters(self) -> Sequence[Tuple[str, Parameter]]:
-        """Collect all the parameters of this module and its descendents.
-
-        Returns
-        -------
-            The name and `Parameter` of each ancestor parameter.
-
-        """
-        raise NotImplementedError("Need to include this file from past assignment.")
+    def named_parameters(
+        self, base_string: str = ""
+    ) -> Sequence[Tuple[str, Parameter]]:
+        """Recursively aggregates all parameters and their names from submodules and returns a list of all of them"""
+        res: List[Tuple[str, Parameter]] = []
+        if base_string != "":
+            res = [(base_string + "." + k, v) for k, v in self._parameters.items()]
+        else:
+            res = [(k, v) for k, v in self._parameters.items()]
+        for key, mod in self._modules.items():
+            if base_string == "":
+                res += mod.named_parameters(key)
+            else:
+                res += mod.named_parameters(base_string + "." + key)
+        return res
 
     def parameters(self) -> Sequence[Parameter]:
-        """Enumerate over all the parameters of this module and its descendents."""
-        raise NotImplementedError("Need to include this file from past assignment.")
+        """Recursively aggregates all parameters from submodules and returns a list of all of them"""
+        res: List[Parameter] = [v for v in self._parameters.values()]
+        for mod in self._modules.values():
+            res += mod.parameters()
+        return res
 
     def add_parameter(self, k: str, v: Any) -> Parameter:
         """Manually add a parameter. Useful helper for scalar parameters.
@@ -85,6 +98,7 @@ class Module:
         return None
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        """Calls the forward function with the given args and keyword args"""
         return self.forward(*args, **kwargs)
 
     def __repr__(self) -> str:
