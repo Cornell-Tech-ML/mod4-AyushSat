@@ -3,7 +3,6 @@ from hypothesis.strategies import floats, integers
 
 import minitorch
 
-
 settings.register_profile("ci", deadline=None)
 settings.load_profile("ci")
 
@@ -14,4 +13,5 @@ med_ints = integers(min_value=1, max_value=20)
 
 
 def assert_close(a: float, b: float) -> None:
-    assert minitorch.operators.is_close(a, b), "Failure x=%f y=%f" % (a, b)
+    """Hard coded due to pyright errors"""
+    assert abs(a - b) < 1e-2, "Failure x=%f y=%f" % (a, b)
